@@ -4,6 +4,7 @@ import { useState, memo, type FC } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from './ui/button';
 import {
@@ -42,13 +43,14 @@ const RegisterFormComponent: FC<RegisterFormProps> = ({
   isloading,
   oauth,
 }) => {
+  const { t } = useTranslation();
   const [show, setShow] = useState<boolean>(false);
   return (
     <Card className="mx-auto max-w-sm">
       <CardHeader>
-        <CardTitle className="text-2xl">Register</CardTitle>
+        <CardTitle className="text-2xl">{t('register', 'Register')}</CardTitle>
         <CardDescription>
-          Enter your detail below to register your account
+          {t('registerDesc', 'Enter your detail below to register your account')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -59,7 +61,7 @@ const RegisterFormComponent: FC<RegisterFormProps> = ({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>{t('name', 'Name')}</FormLabel>
                   <FormControl>
                     <Input
                       type="text"
@@ -78,7 +80,7 @@ const RegisterFormComponent: FC<RegisterFormProps> = ({
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username</FormLabel>
+                  <FormLabel>{t('username', 'Username')}</FormLabel>
                   <FormControl>
                     <Input
                       type="text"
@@ -99,7 +101,7 @@ const RegisterFormComponent: FC<RegisterFormProps> = ({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t('email', 'Email')}</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
@@ -120,7 +122,7 @@ const RegisterFormComponent: FC<RegisterFormProps> = ({
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>{t('password', 'Password')}</FormLabel>
                   <FormControl>
                     <div className="flex flex-row">
                       <Input
@@ -150,7 +152,7 @@ const RegisterFormComponent: FC<RegisterFormProps> = ({
             disabled={isloading}
           >
             {isloading && <Spinner />}
-            Register
+            {t('register', 'Register')}
           </Button>
           <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
             <span className="relative z-10 bg-background px-2 text-muted-foreground">

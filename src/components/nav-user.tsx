@@ -3,6 +3,7 @@
 import { type FC, memo } from 'react';
 import { ChevronsUpDown, LogOut, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
@@ -23,6 +24,7 @@ import {
 import { useUser, useAuth } from '@/hooks';
 
 const NavUserComponent: FC = () => {
+  const { t } = useTranslation();
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
   const { user } = useUser();
@@ -75,18 +77,18 @@ const NavUserComponent: FC = () => {
             <DropdownMenuSeparator />
             {status === 'signIn' && (
               <DropdownMenuItem onClick={() => navigate('/changepassword')}>
-                Change Password
+                {t('changePassword', 'Change Password')}
               </DropdownMenuItem>
             )}
             <DropdownMenuItem onClick={handleLogout} disabled={isloading}>
               {status === 'signIn' ? (
                 <>
                   <LogOut />
-                  Log out
+                  {t('logout', 'Log out')}
                 </>
               ) : (
                 <>
-                  <LogIn /> Log In
+                  <LogIn /> {t('login', 'Log In')}
                 </>
               )}
             </DropdownMenuItem>

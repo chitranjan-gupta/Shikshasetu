@@ -73,11 +73,15 @@ export async function getMessage(id: string, BEARER_TOKEN: string) {
 }
 
 export async function patchMessage(id: string, BEARER_TOKEN: string) {
-  const response = await axios.patch(`${temp_mail_api_url}/messages/${id}`, {
-    headers: {
-      Authorization: `Bearer ${BEARER_TOKEN}`,
-    },
-  });
+  const response = await axios.patch(
+    `${temp_mail_api_url}/messages/${id}`,
+    undefined,
+    {
+      headers: {
+        Authorization: `Bearer ${BEARER_TOKEN}`,
+      },
+    }
+  );
   return response;
 }
 

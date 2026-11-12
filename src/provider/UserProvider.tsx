@@ -41,7 +41,7 @@ const UserProviderComponent: FC<UserProviderProps> = ({ children }) => {
     []
   );
   const clearProfile = useCallback((key: number) => {
-    autofills$.autofills[key].delete();
+    autofills$.removeAutofill(key);
   }, []);
   const setUser = useCallback(async (data: SignUpState) => {
     let auth = false;

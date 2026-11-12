@@ -1,14 +1,15 @@
 'use client';
 
 import { Fragment, useMemo, useCallback, type FC } from 'react';
+import { useTranslation } from 'react-i18next';
 
+import { getAllInputFields, setAllInputFields } from '@/lib/form-fill';
+import { browserStorage } from '@/lib/browser';
 import {
   generateRandomEmail,
   generateRandomPassword,
   normalizeText,
-  setAllInputFields,
-  getAllInputFields,
-} from '@/lib';
+} from '@/lib/text';
 
 interface RightClickMenuTitleProps {
   title: () => string;
@@ -83,6 +84,7 @@ export const RightClickMenu: FC<RightClickMenuProps> = ({
   items,
   document_files,
 }) => {
+  const { t } = useTranslation();
   const handleTitle = useCallback((title: string | object) => {
     return normalizeText(
       typeof title === 'object'
@@ -91,28 +93,23 @@ export const RightClickMenu: FC<RightClickMenuProps> = ({
     );
   }, []);
   const handleClick = useCallback(
-    (value: string | object, clickEvent?: any) => {
+    (value: string | object, clickEvent?: any, parent?: string) => {
       const target = event.target as HTMLInputElement;
-      console.log('clickEvent', clickEvent);
-      if (
-        clickEvent &&
-        clickEvent.target &&
-        clickEvent.target.dataset &&
-        clickEvent.target.dataset.parent &&
-        clickEvent.target.dataset.parent === 'sites'
-      ) {
-        setAllInputFields(value);
+      const targetParent = parent || clickEvent?.target?.dataset?.parent;
+      if (targetParent === 'sites') {
+        if (typeof value === 'object') {
+          setAllInputFields(value as Record<string, unknown>);
+        }
       } else if (target && target.type === 'file') {
         console.log(document_files);
         const file_ = document_files.get(
           (value as unknown as { url: string }).url
         ) as unknown as File;
         console.log(file_);
-        // if (file_) {
-        //   target.files = [file_] as unknown as FileList;
-        // }
-      } else {
+      } else if (target) {
         target.value = String(value) || '';
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+        target.dispatchEvent(new Event('change', { bubbles: true }));
       }
     },
     [document_files, event.target]
@@ -137,18 +134,50 @@ export const RightClickMenu: FC<RightClickMenuProps> = ({
     return mergedArray;
   }, [items]);
   return (
-    <div className="fixed float-right bottom-[10px] right-[10px] bg-white border border-solid border-[#ccc] p-[15px] cursor-pointer z-[9999] rounded-[5px] max-h-[200px] overflow-y-scroll shadow-[0_0_10px_rgba(0,0,0,0.1)]">
+    <div
+      className="fixed bottom-[10px] right-[10px] bg-white text-gray-800 border border-solid border-[#ccc] p-[15px] cursor-pointer z-[2147483647] rounded-[5px] max-h-[220px] overflow-y-scroll shadow-[0_0_12px_rgba(0,0,0,0.15)] text-sm"
+      style={{
+        position: 'fixed',
+        bottom: '10px',
+        right: '10px',
+        zIndex: 2147483647,
+        maxHeight: '220px',
+        backgroundColor: '#ffffff',
+        color: '#1f2937',
+        border: '1px solid #d1d5db',
+        borderRadius: '6px',
+        boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
+        padding: '12px',
+        overflowY: 'auto',
+      }}
+    >
       <RightClickMenuTitle
-        title={() => handleTitle(title)}
-        handleClick={() => getAllInputFields(Object.fromEntries(items))}
+        title={() => handleTitle(title || t('autofillDetails', 'Autofill details'))}
+        handleClick={() => {
+          // 1. Fill from standard profile data
+          getAllInputFields(Object.fromEntries(items));
+          // 2. Also fill any captured saved-site details for this current URL
+          const currentUrl = window.location.href;
+          const siteDataFromItems = (Object.fromEntries(items) as any)?.sites?.[currentUrl];
+          if (siteDataFromItems) {
+            setAllInputFields(siteDataFromItems);
+          } else {
+            browserStorage?.local?.get?.(['saved_sites', currentUrl])?.then?.((res: any) => {
+              const saved = res?.saved_sites?.[currentUrl] || res?.[currentUrl];
+              if (saved && typeof saved === 'object') {
+                setAllInputFields(saved);
+              }
+            });
+          }
+        }}
       />
       <RightClickMenuItem
-        title={() => handleTitle('Random Email')}
-        handleClick={() => handleClick(generateRandomEmail())}
+        title={() => handleTitle(t('tempEmail', 'Temp Email'))}
+        handleClick={(ce) => handleClick(generateRandomEmail(), ce)}
       />
       <RightClickMenuItem
-        title={() => handleTitle('Random Password')}
-        handleClick={() => handleClick(generateRandomPassword())}
+        title={() => handleTitle(t('tempPassword', 'Temp Password'))}
+        handleClick={(ce) => handleClick(generateRandomPassword(), ce)}
       />
       {data.map((item) => {
         return Array.isArray(item[1]) ? (
@@ -184,7 +213,7 @@ export const RightClickMenu: FC<RightClickMenuProps> = ({
           <Fragment key={item[0]}>
             <RightClickMenuItem
               title={() => handleTitle(item[0])}
-              handleClick={() => handleClick(item[1] as string)}
+              handleClick={(ce) => handleClick(item[1] as string, ce)}
             />
           </Fragment>
         );

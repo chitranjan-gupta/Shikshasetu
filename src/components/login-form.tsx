@@ -4,6 +4,7 @@ import { useState, type FC, memo } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { EyeOff, Eye } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from './ui/button';
 import {
@@ -40,13 +41,14 @@ const LoginFormComponent: FC<LoginFormProps> = ({
   isloading,
   oauth,
 }) => {
+  const { t } = useTranslation();
   const [show, setShow] = useState<boolean>(false);
   return (
     <Card className="mx-auto max-w-sm">
       <CardHeader>
-        <CardTitle className="text-2xl">Login</CardTitle>
+        <CardTitle className="text-2xl">{t('login', 'Login')}</CardTitle>
         <CardDescription>
-          Enter your email below to login to your account
+          {t('loginDesc', 'Enter your email below to login to your account')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -57,7 +59,7 @@ const LoginFormComponent: FC<LoginFormProps> = ({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t('email', 'Email')}</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
@@ -80,7 +82,7 @@ const LoginFormComponent: FC<LoginFormProps> = ({
                 <FormItem>
                   <FormLabel>
                     <div className="flex items-center">
-                      <span>Password</span>
+                      <span>{t('password', 'Password')}</span>
                       <a
                         href="#"
                         className="ml-auto inline-block text-sm underline !text-black"
@@ -118,7 +120,7 @@ const LoginFormComponent: FC<LoginFormProps> = ({
             disabled={isloading}
           >
             {isloading && <Spinner />}
-            Login
+            {t('login', 'Login')}
           </Button>
           <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
             <span className="relative z-10 bg-background px-2 text-muted-foreground">

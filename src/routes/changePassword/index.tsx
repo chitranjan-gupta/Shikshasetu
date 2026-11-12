@@ -5,11 +5,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 
-import { ChangePasswordForm } from '@/components';
+import { ChangePasswordForm } from '@/components/change-password-form';
 
 import { useAuth } from '@/hooks';
 
@@ -43,6 +44,7 @@ const formSchema = z.object({
 });
 
 const ChangePasswordComponent: FC = () => {
+  const { t } = useTranslation();
   const { status, error, isloading, handleDashboard, changepassword } =
     useAuth();
   const form = useForm<z.infer<typeof formSchema>>({
@@ -70,7 +72,7 @@ const ChangePasswordComponent: FC = () => {
         >
           {status === 'signIn' && (
             <Button type="button" variant="outline" onClick={handleDashboard}>
-              <ArrowLeft /> Go to Dashboard
+              <ArrowLeft /> {t('goToDashboard', 'Go to Dashboard')}
             </Button>
           )}
           <ChangePasswordForm form={form} error={error} isloading={isloading} />

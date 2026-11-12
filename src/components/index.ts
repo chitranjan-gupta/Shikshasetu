@@ -10,5 +10,6 @@ export * from './login-form';
 export * from './avatars';
 export * from './profile-data';
 export * from './email-view';
+export * from './saved-sites-view';
 export * from './register-form';
 export * from './change-password-form';

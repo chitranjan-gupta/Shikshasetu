@@ -3,6 +3,7 @@
 import { useMemo, useEffect, type FC } from 'react';
 import { EllipsisVertical, LogIn, LogOut } from 'lucide-react';
 import { observer } from '@legendapp/state/react';
+import { useTranslation } from 'react-i18next';
 
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -22,7 +23,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-import { Avatars, Profile, Emails } from '@/components';
+import { Avatars, Profile, Emails, SavedSitesView } from '@/components';
+import { PerformanceToggle } from '@/components/performance-toggle';
 
 import {
   fetchFromLocal,
@@ -36,11 +38,13 @@ import { useUser, useAccount, useAuth } from '@/hooks';
 import type { Data } from '@/types';
 
 const ProfilesComponent: FC = () => {
+  const { t } = useTranslation();
   const { status, isloading, handleLogout } = useAuth();
   const { user, profiles } = useUser();
   const { account } = useAccount();
   const data: Data[] = useMemo(() => {
-    const datarow = profiles.length > 0 ? profiles[account] : {};
+    const rawRow = profiles.length > 0 ? profiles[account] : {};
+    const { sites, ...datarow } = (rawRow || {}) as any;
     const modArray = Object.entries(datarow || {}).map((value) => {
       if (typeof value[1] === 'object' && !Array.isArray(value[1])) {
         return [
@@ -146,14 +150,14 @@ const ProfilesComponent: FC = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56">
                 <DropdownMenuLabel>
-                  {status === 'signIn' ? 'My Account' : 'Log In Account'}
+                  {status === 'signIn' ? t('myAccount', 'My Account') : t('loginAccount', 'Log In Account')}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {status === 'signIn' && (
                   <>
                     <DropdownMenuGroup>
                       <DropdownMenuItem>
-                        Profile
+                        {t('profile', 'Profile')}
                         <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
                       </DropdownMenuItem>
                       <DropdownMenuItem>
@@ -161,7 +165,7 @@ const ProfilesComponent: FC = () => {
                         <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
                       </DropdownMenuItem>
                       <DropdownMenuItem>
-                        Settings
+                        {t('settings', 'Settings')}
                         <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
                       </DropdownMenuItem>
                       <DropdownMenuItem>
@@ -201,11 +205,11 @@ const ProfilesComponent: FC = () => {
                   {status === 'signIn' ? (
                     <>
                       <LogOut />
-                      Log out
+                      {t('logout', 'Log out')}
                     </>
                   ) : (
                     <>
-                      <LogIn /> Log In
+                      <LogIn /> {t('login', 'Log In')}
                     </>
                   )}
                   <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
@@ -218,14 +222,19 @@ const ProfilesComponent: FC = () => {
           <Separator />
         </div>
       </div>
-      <div>
+      <div className="w-[400px]">
+        <PerformanceToggle />
         <Tabs defaultValue="profile" className="w-[400px]">
-          <TabsList className="w-full grid grid-cols-2">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="emails">Emails</TabsTrigger>
+          <TabsList className="w-full grid grid-cols-3">
+            <TabsTrigger value="profile">{t('profile', 'Profile')}</TabsTrigger>
+            <TabsTrigger value="sites">{t('savedSites', 'Saved Sites')}</TabsTrigger>
+            <TabsTrigger value="emails">{t('emails', 'Emails')}</TabsTrigger>
           </TabsList>
           <TabsContent value="profile">
             <Profile data={data} />
+          </TabsContent>
+          <TabsContent value="sites">
+            <SavedSitesView />
           </TabsContent>
           <TabsContent value="emails">
             <Emails />

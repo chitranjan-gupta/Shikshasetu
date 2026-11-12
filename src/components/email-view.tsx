@@ -2,6 +2,7 @@
 
 import { type FC } from 'react';
 import { observer } from '@legendapp/state/react';
+import { useTranslation } from 'react-i18next';
 
 import {
   Card,
@@ -17,11 +18,12 @@ import { sendToBackground } from '@/lib';
 import { mails$, accounts$, domains$ } from '@/store';
 
 const EmailsComponent: FC = () => {
+  const { t } = useTranslation();
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Emails</CardTitle>
-        <CardDescription>See Your Emails.</CardDescription>
+        <CardTitle>{t('emails', 'Emails')}</CardTitle>
+        <CardDescription>{t('seeYourEmails', 'See Your Emails.')}</CardDescription>
       </CardHeader>
       <CardContent>
         <Mail

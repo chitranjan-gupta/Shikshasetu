@@ -1,205 +1,243 @@
-import {
-  normalizeText,
-  // generateRandomEmail,
-  // generateRandomPassword,
-  browserStorage,
-  browserRuntime,
-  isChrome,
-  isBrowser,
-  getAllInputFields,
-  setAllInputFields,
-} from '@/lib';
+import { browserRuntime, browserStorage } from '@/lib/browser';
+import { setFastDomQuery } from '@/lib/dom';
+import { clearPromptDecisions, persistCapturedForm, watchPageForms } from '@/lib/form-capture';
+import { getAllInputFields, setAllInputFields } from '@/lib/form-fill';
+import { setFieldMatchers } from '@/lib/field-matchers';
+import { PERFORMANCE_MODE_KEY } from '@/lib/performance';
+import { plainMenuStyle, renderPlainSuggestions } from '@/lib/plain-suggestions';
+import { normalizeText } from '@/lib/text';
 import type { FormSchemaType } from '@/types';
-import {
-  // getRoot,
-  setRoot,
-} from './content';
-import styles from '@/styles/index.css?inline';
 
 declare global {
   interface Window {
+    __shikshaSetu?: boolean;
+    __shikshaSetuMenu?: {
+      setRoot: typeof import('./content').setRoot;
+    };
     autofill: FormSchemaType;
     document_files: Map<string, object>;
   }
 }
 
-window.autofill = {};
-window.document_files = new Map();
+let suggestionHost: HTMLDivElement | null = null;
+let suggestionMount: HTMLDivElement | null = null;
+let suggestionRoot: ReturnType<
+  NonNullable<Window['__shikshaSetuMenu']>['setRoot']
+> | null = null;
+let cachedEntries: [string, unknown][] | null = null;
+let performanceMode = false;
+let performanceReady = false;
+let pendingSuggestion: {
+  target: HTMLInputElement | HTMLTextAreaElement;
+  event: Event;
+} | null = null;
+
+const pageScriptLoaded = Boolean(window.__shikshaSetu);
+window.__shikshaSetu = true;
+
+window.autofill = window.autofill || {};
+window.document_files = window.document_files || new Map();
 
 const initial = () => {
   console.log('Fetching data initial');
-  //browserRuntime.sendMessage({ action: 'fetchData' });
-  //browserRuntime.sendMessage({ action: 'fetchFiles' });
+  try {
+    browserRuntime?.sendMessage?.({ action: 'fetchData' })?.catch?.(() => {});
+    browserRuntime?.sendMessage?.({ action: 'fetchFiles' })?.catch?.(() => {});
+  } catch {
+    // ignore
+  }
 };
 
-initial();
-
-// Establish a connection with the background script
-const port = browserRuntime.connect({ name: 'content-script' });
-port.postMessage({ action: 'hello' });
-port.onMessage.addListener(function (msg: any) {
-  console.log(msg);
-});
-
-document.addEventListener('click', function (event) {
-  attachForm();
-  createAutocompleteList(event);
-});
-
-function createAutocompleteList(event: Event) {
-  const isList = document.querySelector('.autocomplete-list-shiksha-setu');
-  if (isList) {
-    isList.remove();
-  }
-  // browserRuntime.sendMessage({ action: 'fetchData' });
-  if (
-    event.target instanceof HTMLInputElement ||
-    event.target instanceof HTMLTextAreaElement
-  ) {
-    console.log('Autofill Invoked');
-    const target = event.target as HTMLInputElement;
-    if (target) {
-      console.log('Target is input');
-      const list = document.createElement('div');
-      list.classList.add('autocomplete-list-shiksha-setu');
-      const shadowList = list.attachShadow({ mode: 'open' });
-      (target.parentNode as HTMLElement).appendChild(list);
-      console.log('ShadowDom is created');
-      const innerCustomMenu = document.createElement('div');
-      shadowList.appendChild(innerCustomMenu);
-      console.log('Inserting Div into ShadowDom');
-      const sheet = new CSSStyleSheet();
-      sheet.replaceSync(styles);
-      //const extraSheet = new CSSStyleSheet();
-      // extraSheet.replaceSync("* { all: initial }");
-      // Check if adoptedStyleSheets is supported
-      if (isChrome && !isBrowser) {
-        // Use adoptedStyleSheets if supported (Chrome, Edge, etc.)
-        console.log('Inserting css into ShadowDom');
-        shadowList.adoptedStyleSheets = [sheet];
-      } else {
-        // Fallback for Firefox and other browsers that don't support adoptedStyleSheets
-        console.log('Inserting style in ShadowDom');
-        const styleElement = document.createElement('style');
-        styleElement.textContent = styles; // Assuming 'styles' is a string with CSS rules
-        shadowList.appendChild(styleElement);
-      }
-      //console.log(window.document_files);
-      console.log('browserStorage');
-      browserStorage.local.get(
-        ['currentAutofill', 'temp_mail'],
-        (result: any) => {
-          if (result && (result.currentAutofill || result.temp_mail)) {
-            console.log('storage is fetched');
-            setRoot(
-              shadowList,
-              event,
-              Object.entries({
-                temp_mail: result.temp_mail || 'temp@mail.com',
-                ...result.currentAutofill,
-              }),
-              new Map() //new Map(window.document_files)
-            );
-          }
-        }
-      );
-      // target.addEventListener('input', (e) => {
-      //   const inputValue = (e?.target as HTMLInputElement)?.value.toLowerCase();
-      //   const filteredData = data.filter((item) => item.toLowerCase().includes(inputValue));
-      //   const listItems = filteredData.map((item) => `<li>${item}</li>`).join('');
-      //   list.innerHTML = `<ul>${listItems}</ul>`;
-      //   list.style.display = 'block';
-      // });
-      // target.addEventListener('blur', (event) => {
-      //   console.log(event)
-      //   if(event.target){
-      //     // const element = event.target;
-      //   }
-      //   const autoComplete = (target.parentNode as HTMLElement).querySelector(
-      //     '.autocomplete-list-shiksha-setu'
-      //   );
-      //   if (autoComplete) {
-      //     autoComplete.remove();
-      //   }
-      // });
+if (!pageScriptLoaded) {
+  initial();
+  window.addEventListener('shikshasetu-menu-ready', () => {
+    if (performanceMode || !pendingSuggestion || !suggestionMount) {
+      return;
     }
-  }
-}
-
-function attachForm() {
-  if (document.documentElement.dataset.formAttached) {
-    return;
-  }
-  const forms = document.querySelectorAll('form');
-  console.log(forms);
-  forms.forEach((form: HTMLFormElement) => {
-    document.documentElement.setAttribute('data-form-attached', 'true');
-    console.log('Form Attached');
-    form.onsubmit = () => {
-      if (!form) {
+    showSuggestions(pendingSuggestion.target, pendingSuggestion.event);
+  });
+  loadPageData();
+  browserStorage.onChanged.addListener(
+    (
+      changes: {
+        fieldMatchers?: { newValue?: unknown };
+        currentAutofill?: { newValue?: unknown };
+        temp_mail?: { newValue?: unknown };
+        performanceMode?: { newValue?: unknown };
+        saved_sites?: { newValue?: Record<string, unknown> };
+        blocked_sites?: { newValue?: Record<string, boolean> };
+      },
+      area: string
+    ) => {
+      if (area !== 'local') {
         return;
       }
-      console.log('form', form);
-      const formData = new FormData(form);
-      console.log('formData', formData);
-      const formDatas = formData.entries();
-      console.log('formDatas', formDatas);
-      if (formData && formDatas) {
-        let jsonObject: any = {};
-        if (isChrome && !isBrowser) {
-          console.log('chrome', 'yes');
-          jsonObject = Object.fromEntries(formDatas);
-        } else {
-          console.log('firefox', 'yes');
-          let currentResult = formDatas.next();
-          while (!currentResult.done) {
-            const resultValue = currentResult.value;
-            if (!(resultValue[1] instanceof File)) {
-              jsonObject[resultValue[0]] = resultValue[1];
-            }
-            currentResult = formDatas.next();
-          }
-        }
-        console.log('jsonObject', jsonObject);
-        //const json: Record<string, FormDataEntryValue> = {};
-        const jsonRef = window.location.href;
-        // for (const [key, value] of formData) {
-        //   (json as Record<string, FormDataEntryValue>)[key] = value;
-        // }
-        console.log('browserStorage', browserStorage);
-        browserStorage.local.get(['sitesurls'], (result: any) => {
-          if (result && result.sitesurls) {
-            browserStorage.local.set(
-              {
-                [jsonRef]: jsonObject,
-                sitesurls: { ...result.sitesurls, [jsonRef]: true },
-              },
-              () => {
-                console.log('Form Value is set');
-              }
-            );
-          } else {
-            browserStorage.local.set(
-              {
-                [jsonRef]: jsonObject,
-                sitesurls: { [jsonRef]: true },
-              },
-              () => {
-                console.log('Form Value is set');
-              }
-            );
-          }
-        });
-        console.log('browserRuntime', browserRuntime);
-        browserRuntime.sendMessage({
-          action: 'initialDetails',
-        });
+      if (changes.fieldMatchers) {
+        setFieldMatchers(changes.fieldMatchers.newValue);
       }
-    };
+      if (changes.performanceMode) {
+        applyPerformanceMode(changes.performanceMode.newValue === true);
+      }
+      if (changes.currentAutofill || changes.temp_mail) {
+        loadPageData();
+      }
+      if (changes.saved_sites) {
+        // If current site was removed from saved_sites, allow prompting again
+        const currentUrl = window.location.href;
+        const newSaved = changes.saved_sites.newValue || {};
+        if (!newSaved[currentUrl]) {
+          clearPromptDecisions(currentUrl);
+        }
+      }
+      if (changes.blocked_sites) {
+        // If current site was unblocked, allow prompting again
+        const currentUrl = window.location.href;
+        const newBlocked = changes.blocked_sites.newValue || {};
+        if (!newBlocked[currentUrl]) {
+          clearPromptDecisions(currentUrl);
+        }
+      }
+    }
+  );
+  document.addEventListener('click', onPageClick);
+  watchPageForms((form) => {
+    persistCapturedForm(form, browserStorage.local, () => {
+      try {
+        browserRuntime?.sendMessage?.({ action: 'initialDetails' })?.catch?.(() => {});
+      } catch {
+        // ignore
+      }
+    }).catch((error) => console.log(error));
   });
+  browserRuntime.onMessage.addListener(onRuntimeMessage);
 }
 
-attachForm();
+function resetSuggestion() {
+  suggestionRoot?.unmount();
+  suggestionRoot = null;
+  pendingSuggestion = null;
+  suggestionHost?.remove();
+  suggestionHost = null;
+  suggestionMount = null;
+}
+
+function applyPerformanceMode(enabled: boolean) {
+  const first = !performanceReady;
+  const changed = enabled !== performanceMode;
+  performanceReady = true;
+  performanceMode = enabled;
+  setFastDomQuery(enabled);
+  if (!first && changed) {
+    resetSuggestion();
+  }
+}
+
+function loadPageData() {
+  browserStorage.local
+    .get(['fieldMatchers', 'currentAutofill', 'temp_mail', PERFORMANCE_MODE_KEY])
+    .then(
+      (result: {
+        fieldMatchers?: unknown;
+        currentAutofill?: Record<string, unknown>;
+        temp_mail?: string;
+        performanceMode?: boolean;
+      }) => {
+        if (result?.fieldMatchers) {
+          setFieldMatchers(result.fieldMatchers);
+        }
+        cachedEntries = Object.entries({
+          temp_mail: result?.temp_mail || 'temp@mail.com',
+          ...(result?.currentAutofill || {}),
+        });
+        applyPerformanceMode(result?.performanceMode === true);
+        if (pendingSuggestion && document.contains(pendingSuggestion.target)) {
+          ensureSuggestion();
+          showSuggestions(pendingSuggestion.target, pendingSuggestion.event);
+        }
+      }
+    );
+}
+
+function ensureSuggestion() {
+  if (suggestionHost && suggestionMount) {
+    return;
+  }
+  suggestionHost = document.createElement('div');
+  suggestionHost.classList.add('autocomplete-list-shiksha-setu');
+  suggestionHost.style.position = 'fixed';
+  suggestionHost.style.top = '0';
+  suggestionHost.style.left = '0';
+  suggestionHost.style.width = '0';
+  suggestionHost.style.height = '0';
+  suggestionHost.style.zIndex = '2147483647';
+  suggestionHost.style.pointerEvents = 'none';
+
+  const shadowList = suggestionHost.attachShadow({ mode: 'open' });
+  suggestionMount = document.createElement('div');
+  suggestionMount.style.pointerEvents = 'auto';
+  shadowList.appendChild(suggestionMount);
+  if (performanceMode) {
+    const styleElement = document.createElement('style');
+    styleElement.textContent = plainMenuStyle;
+    shadowList.appendChild(styleElement);
+  }
+}
+
+function showSuggestions(
+  target: HTMLInputElement | HTMLTextAreaElement,
+  event: Event
+) {
+  if (!cachedEntries || !suggestionMount || !suggestionHost) {
+    return;
+  }
+  if (!document.body.contains(suggestionHost)) {
+    document.body.appendChild(suggestionHost);
+  }
+  if (performanceMode) {
+    pendingSuggestion = null;
+    suggestionRoot?.unmount();
+    suggestionRoot = null;
+    renderPlainSuggestions(suggestionMount, cachedEntries, target);
+    return;
+  }
+  const menu = window.__shikshaSetuMenu;
+  if (!menu) {
+    pendingSuggestion = { target, event };
+    try {
+      browserRuntime?.sendMessage?.({ action: 'inject-menu' })?.catch?.(() => {});
+    } catch {
+      // ignore
+    }
+    return;
+  }
+  pendingSuggestion = null;
+  suggestionRoot = menu.setRoot(
+    suggestionMount,
+    event,
+    cachedEntries,
+    new Map(),
+    suggestionRoot ?? undefined
+  );
+}
+
+function onPageClick(event: Event) {
+  const target = event.target;
+  if (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement
+  ) {
+    if (!performanceReady) {
+      pendingSuggestion = { target, event };
+      return;
+    }
+    ensureSuggestion();
+    showSuggestions(target, event);
+    return;
+  }
+  if (suggestionHost && !event.composedPath().includes(suggestionHost)) {
+    suggestionHost.remove();
+  }
+}
 
 function findCareer() {
   const jobListings = new Map(); // Using a Map for better duplicate checking and optimized performance.
@@ -309,7 +347,7 @@ function findCareerURL() {
   return { careerURLs };
 }
 
-browserRuntime.onMessage.addListener((request: any) => {
+function onRuntimeMessage(request: any) {
   // console.log('Message received')
   if (request.action === 'findCareerURL') {
     const result = findCareerURL();
@@ -333,7 +371,7 @@ browserRuntime.onMessage.addListener((request: any) => {
       setAllInputFields(request.data);
     }
   }
-});
+}
 
 interface CareerURL {
   url: string;
