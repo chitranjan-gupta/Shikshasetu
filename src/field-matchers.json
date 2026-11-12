@@ -1,0 +1,68 @@
+[
+  { "by": "name", "keys": ["user[name]", "name"], "path": "full_name" },
+  {
+    "by": "name",
+    "keys": ["first_name", "personal_info.first_name", "firstname"],
+    "path": "first_name"
+  },
+  { "by": "name", "keys": ["middle_name", "middlename"], "path": "middle_name" },
+  {
+    "by": "name",
+    "keys": ["last_name", "personal_info.last_name", "lastname"],
+    "path": "last_name"
+  },
+  {
+    "by": "name",
+    "keys": ["phone_number", "phone", "personal_info.phone", "mobilephone.number"],
+    "path": "phone_number.phone_number"
+  },
+  { "by": "name", "keys": ["personal_info.email", "email"], "path": "email" },
+  { "by": "name", "keys": ["9n098h", "country"], "path": "country" },
+  { "by": "name", "keys": ["address"], "path": "address" },
+  {
+    "by": "name",
+    "keys": ["location", "standardfields.currentlocation.answer", "city"],
+    "path": "city"
+  },
+  { "by": "name", "keys": ["state"], "path": "state" },
+  {
+    "by": "name",
+    "keys": ["yearsofexperience", "workexperience.years"],
+    "path": "work_experience.years"
+  },
+  { "by": "name", "keys": ["workexperience.months"], "path": "work_experience.months" },
+  {
+    "by": "name",
+    "keys": ["desiredsalary", "expectedsalary.amount"],
+    "path": "salary_expectation.salary"
+  },
+  { "by": "name", "keys": ["currentsalary.amount"], "path": "current_salary.salary" },
+  {
+    "by": "name",
+    "keys": ["standardfields.availability.answer"],
+    "path": "available_to_join_in_days"
+  },
+  {
+    "by": "name",
+    "keys": ["requiresponsorship"],
+    "path": "do_you_require_visa_sponsorship"
+  },
+  {
+    "by": "name",
+    "keys": ["usernote", "customquestionanswers[52686][answer]"],
+    "path": "interest_about_company"
+  },
+  { "by": "name", "keys": ["urls[linkedin]"], "path": "linkedin" },
+  { "by": "name", "keys": ["urls[github]"], "path": "github" },
+  { "by": "name", "keys": ["urls[portfolio]"], "path": "portfolio" },
+  { "by": "type", "keys": ["email"], "path": "email" },
+  { "by": "type", "keys": ["tel"], "path": "phone_number.phone_number" },
+  { "by": "id", "keys": ["email", "player_email"], "path": "email" },
+  { "by": "id", "keys": ["phone"], "path": "phone_number.phone_number" },
+  { "by": "id", "keys": ["player_name"], "path": "first_name" },
+  { "by": "id", "keys": ["player_name_last"], "path": "last_name" },
+  { "by": "id", "keys": ["female"], "gender": "female" },
+  { "by": "id", "keys": ["male"], "gender": "male" },
+  { "by": "autocomplete", "keys": ["given-name"], "path": "first_name" },
+  { "by": "autocomplete", "keys": ["family-name"], "path": "last_name" }
+]

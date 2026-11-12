@@ -4,6 +4,7 @@ import { useState, memo, type FC } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from './ui/button';
 import {
@@ -38,11 +39,12 @@ const ChangePasswordFormComponent: FC<ChangePasswordFormProps> = ({
   error,
   isloading,
 }) => {
+  const { t } = useTranslation();
   const [show, setShow] = useState<boolean>(false);
   return (
     <Card className="mx-auto max-w-sm">
       <CardHeader>
-        <CardTitle className="text-2xl">Change Password</CardTitle>
+        <CardTitle className="text-2xl">{t('changePassword', 'Change Password')}</CardTitle>
         <CardDescription>
           Enter your old and new password to change your password
         </CardDescription>
@@ -55,7 +57,7 @@ const ChangePasswordFormComponent: FC<ChangePasswordFormProps> = ({
               name="currentPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Current Password</FormLabel>
+                  <FormLabel>{t('currentPassword', 'Current Password')}</FormLabel>
                   <FormControl>
                     <div className="flex flex-row">
                       <Input
@@ -84,7 +86,7 @@ const ChangePasswordFormComponent: FC<ChangePasswordFormProps> = ({
               name="newPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>New Password</FormLabel>
+                  <FormLabel>{t('newPassword', 'New Password')}</FormLabel>
                   <FormControl>
                     <div className="flex flex-row">
                       <Input
@@ -114,7 +116,7 @@ const ChangePasswordFormComponent: FC<ChangePasswordFormProps> = ({
             disabled={isloading}
           >
             {isloading && <Spinner />}
-            Change
+            {t('changePassword', 'Change Password')}
           </Button>
         </div>
         <div className="mt-4 text-center text-sm">

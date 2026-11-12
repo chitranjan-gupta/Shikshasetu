@@ -21,7 +21,7 @@ interface UserContextType {
 
 export const defaultUser = {
   userId: '',
-  name: 'Guest User',
+  name: 'Default User',
   email: 'me@example.com',
   role: '',
   avatar: '',

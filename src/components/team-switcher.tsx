@@ -2,6 +2,7 @@
 
 import { memo, type FC } from 'react';
 import { GalleryVerticalEnd, ChevronsUpDown, Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import {
   DropdownMenu,
@@ -22,6 +23,7 @@ import {
 import { useUser, useAccount } from '@/hooks';
 
 const TeamSwitcherComponent: FC = () => {
+  const { t } = useTranslation();
   const { isMobile } = useSidebar();
   const { profiles } = useUser();
   const { account, setAccount } = useAccount();
@@ -40,10 +42,10 @@ const TeamSwitcherComponent: FC = () => {
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
-                  {profiles[account]?.email || 'Create Profile'}
+                  {profiles[account]?.first_name || 'Default User'}
                 </span>
                 <span className="truncate text-xs">
-                  {profiles[account]?.first_name || ''}
+                  {profiles[account]?.email || 'me@example.com'}
                 </span>
               </div>
               <ChevronsUpDown className="ml-auto" />
@@ -56,7 +58,7 @@ const TeamSwitcherComponent: FC = () => {
             sideOffset={4}
           >
             <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Profiles
+              {t('profiles', 'Profiles')}
             </DropdownMenuLabel>
             {profiles.map((profile, index) => (
               <DropdownMenuItem
@@ -80,7 +82,7 @@ const TeamSwitcherComponent: FC = () => {
                 <Plus className="size-4" />
               </div>
               <div className="font-medium text-muted-foreground">
-                Add Profile
+                {t('addProfile', 'Add Profile')}
               </div>
             </DropdownMenuItem>
           </DropdownMenuContent>

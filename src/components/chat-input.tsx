@@ -9,6 +9,7 @@ import {
   type SetStateAction,
   type FC,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SendHorizontal, ListPlus, FilePlus2, CirclePlus } from 'lucide-react';
 import { uploadPdfs } from '@/api';
 
@@ -53,6 +54,7 @@ const ChatInputComponent: FC<ChatInputProps> = ({
   modelName,
   setModelName,
 }) => {
+  const { t } = useTranslation();
   const fileRef = useRef(null);
   return (
     <>
@@ -121,7 +123,7 @@ const ChatInputComponent: FC<ChatInputProps> = ({
           <textarea
             value={input}
             onChange={handleInputChange}
-            placeholder="Enter your prompt for the AI"
+            placeholder={t('aiPlaceholder', 'Enter your prompt for the AI')}
             className="flex-1 p-2 bg-white dark:bg-gray-700 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={error != null}
           />

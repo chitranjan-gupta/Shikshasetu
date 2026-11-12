@@ -1,26 +1,32 @@
 import {
-  getAllInputFields,
-  generateRandomPassword,
-  generateRandomString,
-  browserTabs,
-  browserContextMenus,
-  browserStorage,
   browserActions,
-  browserScripting,
-  browserRuntime,
+  browserContextMenus,
   browserCookies,
-  isChrome,
+  browserI18n,
+  browserRuntime,
+  browserScripting,
+  browserStorage,
+  browserTabs,
   isBrowser,
-  setItem,
-  getDomain,
-  fetchFromLocal,
-  removeFromLocal,
+  isChrome,
   saveToLocal,
-} from '@/lib';
-import { autofills$, domains$, accounts$, mails$, s3$ } from '@/store';
-import { getDomains, addAccount, getToken, getMessages } from '@/api';
+} from '@/lib/browser';
+import { fetchFieldMatcherRules } from '@/lib/field-matchers';
+import { readPerformanceMode } from '@/lib/performance';
+import { setItem } from '@/lib/storage';
+import { getDomain } from '@/lib/text';
 
-import type { TokenType, FormSchemaType } from '@/types';
+import type { TokenType } from '@/types';
+
+function loadBackgroundData() {
+  return import('./background-data');
+}
+
+void readPerformanceMode().then((enabled) => {
+  if (!enabled) {
+    void loadBackgroundData();
+  }
+});
 
 // function selectFields(tabId: number): void {
 //   console.log('Sending Message')
@@ -28,172 +34,11 @@ import type { TokenType, FormSchemaType } from '@/types';
 // }
 
 function findCareer(tabId: number): void {
-  console.log('Sending Message');
-  browserTabs.sendMessage(tabId, { action: 'findCareer' });
+  messagePage(tabId, { action: 'findCareer' });
 }
 
 function findCareerURL(tabId: number): void {
-  console.log('Sending Message');
-  browserTabs.sendMessage(tabId, { action: 'findCareerURL' });
-}
-
-async function asyncTask() {
-  try {
-    const domains = (await getDomains()).data;
-    if (domains && domains['hydra:member']) {
-      const activeDomains = domains['hydra:member'];
-      domains$.addDomains(activeDomains);
-      if (activeDomains && activeDomains[0] && activeDomains[0].domain) {
-        const activeDomain = activeDomains[0].domain;
-        const fakeAccount = {
-          address: `${generateRandomString(10, 'abcdefghijklmnopqrstuvwxyz1234567890')}@${activeDomain}`,
-          password: generateRandomPassword(),
-        };
-        const account = (await addAccount(fakeAccount)).data;
-        console.log(account);
-        if (account) {
-          const activeToken = (await getToken(fakeAccount)).data;
-          if (activeToken) {
-            accounts$.addAccount({
-              ...account,
-              password: fakeAccount.password,
-              token: activeToken.token,
-            });
-          }
-        }
-      }
-    }
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-async function asyncTask1() {
-  try {
-    const accounts = accounts$.get().accounts;
-    const account = accounts.length > 0 ? accounts[0] : null;
-    if (account && account.token) {
-      const messages = (await getMessages(account.token)).data;
-      if (messages && messages['hydra:member']) {
-        const activeMessages = messages['hydra:member'];
-        if (activeMessages) {
-          mails$.addMails(activeMessages);
-        }
-      }
-    }
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-async function initialSave() {
-  const data = autofills$.get().autofills;
-  const currentData = autofills$.get().currentAutofill;
-  const accounts = accounts$.get().accounts;
-  const account = accounts.length > 0 ? accounts[0] : null;
-  if (account && account.address) {
-    await browserStorage.local.set({ temp_mail: account.address });
-  }
-  if (data && data[currentData]) {
-    await browserStorage.local.set({ currentAutofill: data[currentData] });
-  }
-}
-
-function setProfile(values: FormSchemaType & { id?: string }) {
-  if (values?.id) {
-    autofills$.editAutofill({ ...values, id: values.id! });
-  } else {
-    autofills$.addAutofill(values);
-  }
-}
-
-async function saveDetails(url: string | null) {
-  const profiles = autofills$.get().autofills;
-  const account = autofills$.get().currentAutofill;
-  if (url) {
-    if (isChrome && !isBrowser && browserStorage) {
-      const details = await fetchFromLocal([url]);
-      if (details && details[url]) {
-        const currentProfile = profiles[account] ?? {};
-        const existingDetails =
-          currentProfile && currentProfile?.sites
-            ? (currentProfile.sites ?? {})
-            : {};
-        setProfile({
-          ...currentProfile,
-          sites: { ...existingDetails, ...details },
-        });
-      }
-      await removeFromLocal([url]);
-    } else {
-      browserStorage.local.get([url], (details: any) => {
-        if (details && details[url]) {
-          const currentProfile = profiles[account] ?? {};
-          const existingDetails =
-            currentProfile && currentProfile?.sites
-              ? (currentProfile.sites ?? {})
-              : {};
-          setProfile({
-            ...currentProfile,
-            sites: { ...existingDetails, ...details },
-          });
-          browserStorage.local.remove([url], () => {
-            console.log('url is removed');
-          });
-        }
-      });
-    }
-  }
-}
-
-async function initialDetails() {
-  const profiles = autofills$.get().autofills;
-  const account = autofills$.get().currentAutofill;
-  if (isChrome && !isBrowser) {
-    console.log('chrome', 'yes');
-    (async () => {
-      if (browserStorage) {
-        const details = await fetchFromLocal(['sitesurls', 'currentAutofill']);
-        if (details && details['sitesurls']) {
-          const data = details['sitesurls'];
-          if (data) {
-            Object.keys(data).forEach(async (u) => await saveDetails(u));
-          }
-          await removeFromLocal(['sitesurls']);
-        }
-        if (details && profiles.length > 0) {
-          await saveToLocal({ currentAutofill: profiles[account] });
-        }
-      }
-    })();
-  } else {
-    console.log('firefox', 'yes');
-    if (browserStorage) {
-      browserStorage.local.get(
-        ['sitesurls', 'currentAutofill'],
-        (details: any) => {
-          console.log('details', details);
-          if (details && details['sitesurls']) {
-            const data = details['sitesurls'];
-            if (data) {
-              Object.keys(data).forEach(async (u) => await saveDetails(u));
-            }
-            browserStorage.local.remove(['sitesurls'], () => {
-              console.log('sitesurls is removed');
-            });
-          }
-          if (details && profiles.length > 0) {
-            browserStorage.local.set(
-              { currentAutofill: profiles[account] },
-              () => {
-                console.log('currentAutofill is set for initial');
-              }
-            );
-          }
-        }
-      );
-    }
-  }
+  messagePage(tabId, { action: 'findCareerURL' });
 }
 
 browserCookies.onChanged.addListener((changeInfo: any) => {
@@ -210,58 +55,130 @@ browserCookies.onChanged.addListener((changeInfo: any) => {
   }
 });
 
+async function updateFieldMatchers() {
+  const url = import.meta.env.VITE_FIELD_MATCHERS_URL;
+  if (!url || !browserStorage?.local) {
+    return;
+  }
+  try {
+    const rules = await fetchFieldMatcherRules(url);
+    if (rules) {
+      await saveToLocal({ fieldMatchers: rules });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+updateFieldMatchers();
+
+browserRuntime.onStartup.addListener(() => {
+  updateFieldMatchers();
+});
+
 browserRuntime.onInstalled.addListener(() => {
+  updateFieldMatchers();
+  const getMsg = (key: string, fallback: string) => browserI18n?.getMessage?.(key) || fallback;
+
   browserContextMenus.create({
     id: 'openSidePanel',
-    title: 'Open AI',
+    title: getMsg('openAi', 'Open AI'),
     contexts: ['all'],
   });
 
   browserContextMenus.create({
     id: 'fillDetail',
-    title: 'Fill Details',
+    title: getMsg('contextAutofill', 'Fill Details'),
     contexts: ['selection', 'editable', 'page', 'all'],
   });
 
   browserContextMenus.create({
     id: 'submenu1',
     parentId: 'fillDetail',
-    title: 'All',
+    title: getMsg('all', 'All'),
     contexts: ['all'],
   });
 
   browserContextMenus.create({
     id: 'submenu2',
     parentId: 'fillDetail',
-    title: 'Select Fields',
+    title: getMsg('selectFields', 'Select Fields'),
     contexts: ['all'],
   });
 
   browserContextMenus.create({
     id: 'submenu3',
     parentId: 'fillDetail',
-    title: 'Find Career',
+    title: getMsg('contextClipCareer', 'Find Career'),
     contexts: ['all'],
   });
 
   browserContextMenus.create({
     id: 'submenu3Option1',
     parentId: 'submenu3',
-    title: 'Find Career URL',
+    title: getMsg('contextClipCareerUrl', 'Find Career URL'),
     contexts: ['all'],
   });
 
   browserContextMenus.create({
     id: 'submenu3Option2',
     parentId: 'submenu3',
-    title: 'List Careers',
+    title: getMsg('listCareers', 'List Careers'),
     contexts: ['all'],
   });
 
   if (false) {
-    asyncTask().catch((error) => console.log(error));
+    void loadBackgroundData().then((data) =>
+      data.asyncTask().catch((error) => console.log(error))
+    );
   }
 });
+
+async function ensureMenuScript(tabId: number) {
+  if (!tabId || tabId < 0 || (await readPerformanceMode())) {
+    return;
+  }
+  try {
+    if (isChrome && !isBrowser && browserScripting?.executeScript) {
+      await browserScripting.executeScript({
+        target: { tabId },
+        files: ['content-menu.js'],
+      });
+      return;
+    }
+    if (browserTabs?.executeScript) {
+      await browserTabs.executeScript(tabId, { file: 'content-menu.js' });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+async function ensureContentScript(tabId: number) {
+  if (!tabId || tabId < 0) {
+    return;
+  }
+  try {
+    if (isChrome && !isBrowser && browserScripting?.executeScript) {
+      await browserScripting.executeScript({
+        target: { tabId },
+        files: ['content-script.js'],
+      });
+      return;
+    }
+    if (browserTabs?.executeScript) {
+      await browserTabs.executeScript(tabId, { file: 'content-script.js' });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+function messagePage(tabId: number, message: { action: string; data?: unknown }) {
+  void ensureContentScript(tabId).then(() => {
+    browserTabs.sendMessage(tabId, message);
+  });
+}
 
 browserContextMenus.onClicked.addListener((info: any, tab: any) => {
   console.log('Context menu clicked');
@@ -279,18 +196,14 @@ browserContextMenus.onClicked.addListener((info: any, tab: any) => {
     }
   }
   if (info.menuItemId === 'submenu1') {
-    const current = autofills$.get().currentAutofill || 0;
-    const storedData =
-      autofills$.get().autofills.length > 0
-        ? autofills$.get().autofills[current]
-        : undefined;
-    if (tab?.id) {
-      browserScripting.executeScript({
-        target: { tabId: tab.id },
-        func: getAllInputFields,
-        args: [storedData || {}],
-      });
-    }
+    void loadBackgroundData().then((data) => {
+      if (tab?.id) {
+        messagePage(tab.id, {
+          action: 'fill',
+          data: data.currentAutofillData(),
+        });
+      }
+    });
   }
   // if (info.menuItemId === "submenu2") {
   //   chrome.scripting.executeScript({
@@ -313,24 +226,34 @@ browserContextMenus.onClicked.addListener((info: any, tab: any) => {
 });
 
 browserRuntime.onMessage.addListener((message: any, sender: any) => {
-  if (message.action === 'fetchData') {
-    initialSave();
+  if (message.action === 'inject-content') {
+    browserTabs.query({ active: true, currentWindow: true }, (tabs: { id?: number }[]) => {
+      if (tabs[0]?.id) {
+        void ensureContentScript(tabs[0].id);
+      }
+    });
+  } else if (message.action === 'inject-menu') {
+    const tabId = sender.tab?.id;
+    if (tabId) {
+      void ensureMenuScript(tabId);
+    }
+  } else if (message.action === 'fetchData') {
+    void loadBackgroundData().then((data) => data.initialSave());
   } else if (message.action === 'fetchFiles') {
-    const files = s3$.get().buckets;
-    console.log('files', files);
-    const data = autofills$.get().autofills;
-    console.log('data', data);
-    const currentData = autofills$.get().currentAutofill;
-    const currentFiles =
-      files && files.length > 0 ? files[currentData] : new Map();
-    console.log('currentFiles', currentFiles);
-    const currentDocumentFiles = Array.from(currentFiles);
-    browserTabs.sendMessage(
-      typeof sender.tab?.id !== 'undefined' ? sender.tab?.id : -1,
-      { action: 'addFiles', data: currentDocumentFiles }
-    );
+    void loadBackgroundData().then((data) => {
+      const currentDocumentFiles = data.currentDocumentFiles();
+      const tabId = sender.tab?.id;
+      if (typeof tabId === 'number' && tabId >= 0) {
+        browserTabs.sendMessage(tabId, {
+          action: 'addFiles',
+          data: currentDocumentFiles,
+        }).catch(() => {});
+      }
+    });
   } else if (message.action === 'fetchMessages') {
-    asyncTask1().catch((error) => console.log(error));
+    void loadBackgroundData().then((data) =>
+      data.asyncTask1().catch((error) => console.log(error))
+    );
   } else if (message.action === 'open_popup') {
     console.log('Opening popup');
     if (isChrome && !isBrowser) {
@@ -339,9 +262,21 @@ browserRuntime.onMessage.addListener((message: any, sender: any) => {
   } else if (message.action === 'sender') {
     console.log(sender);
   } else if (message.action === 'initialDetails') {
-    initialDetails();
+    void loadBackgroundData().then((data) => data.initialDetails());
   }
 });
+
+browserStorage?.onChanged?.addListener(
+  (changes: { performanceMode?: { newValue?: unknown } }, area: string) => {
+    if (
+      area === 'local' &&
+      changes.performanceMode &&
+      changes.performanceMode.newValue !== true
+    ) {
+      void loadBackgroundData();
+    }
+  }
+);
 
 // Establish a connection with the content script
 browserRuntime.onConnect.addListener(function (port: any) {

@@ -7,21 +7,12 @@ export let browserStorage: any;
 export let browserActions: any;
 export let browserNotification: any;
 export let browserCookies: any;
+export let browserI18n: any;
 
-export const isChrome = typeof chrome !== 'undefined';
 export const isBrowser = typeof browser !== 'undefined';
+export const isChrome = typeof chrome !== 'undefined';
 
-if (isChrome) {
-  browserContext = chrome;
-  browserTabs = chrome.tabs;
-  browserRuntime = chrome.runtime;
-  browserContextMenus = chrome.contextMenus;
-  browserScripting = chrome.scripting;
-  browserStorage = chrome.storage;
-  browserActions = chrome.action;
-  browserNotification = chrome.notifications;
-  browserCookies = chrome.cookies;
-} else if (isBrowser) {
+if (isBrowser) {
   browserContext = browser;
   browserTabs = browser.tabs;
   browserRuntime = browser.runtime;
@@ -31,6 +22,18 @@ if (isChrome) {
   browserActions = browser.browserAction;
   browserNotification = browser.notifications;
   browserCookies = browser.cookies;
+  browserI18n = browser.i18n;
+} else if (isChrome) {
+  browserContext = chrome;
+  browserTabs = chrome.tabs;
+  browserRuntime = chrome.runtime;
+  browserContextMenus = chrome.contextMenus;
+  browserScripting = chrome.scripting;
+  browserStorage = chrome.storage;
+  browserActions = chrome.action;
+  browserNotification = chrome.notifications;
+  browserCookies = chrome.cookies;
+  browserI18n = chrome.i18n;
 }
 
 export const saveToLocal = async (values: any) => {
@@ -62,5 +65,16 @@ export const sendToBackground = (action: string, data: any) => {
 };
 
 export const openTab = (option: any) => {
-  browserTabs.create(option);
+  let url: string = option.url;
+  // If the URL is relative (not http/https or an extension protocol URL),
+  // convert it to an absolute extension URL using browserRuntime.getURL.
+  // This ensures the URL resolves from the EXTENSION ROOT, not from the
+  // current page — e.g. calling from popup/index.html would otherwise
+  // resolve 'src/option/index.html' as 'src/popup/src/option/index.html'.
+  if (url && !url.match(/^(https?|moz-extension|chrome-extension):\/\//)) {
+    if (browserRuntime?.getURL) {
+      url = browserRuntime.getURL(url.startsWith('/') ? url : `/${url}`);
+    }
+  }
+  browserTabs.create({ ...option, url });
 };

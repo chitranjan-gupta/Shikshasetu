@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, memo, useCallback, type FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search } from 'lucide-react';
 
 import { Input } from './ui/input';
@@ -23,6 +24,7 @@ const MailComponent: FC<MailProps> = ({
   domains,
   sendCommand,
 }) => {
+  const { t } = useTranslation();
   const [isListOpen, setIsListOpen] = useState(true);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [currentMail, setCurrentMail] = useState(mails[0]);
@@ -64,28 +66,28 @@ const MailComponent: FC<MailProps> = ({
           >
             <AccountSwitcher isCollapsed={false} accounts={accounts} />
             <Button onClick={() => handleCommand('addAccount')}>
-              Generate Account
+              {t('generateAccount', 'Generate Account')}
             </Button>
             <Button onClick={() => handleCommand('fetchMessages')}>
-              Reload Messages
+              {t('reloadMessages', 'Reload Messages')}
             </Button>
           </div>
 
           <Tabs defaultValue="all">
             <div className="flex items-center px-4 py-2">
-              <h1 className="text-xl font-bold">Inbox</h1>
+              <h1 className="text-xl font-bold">{t('inbox', 'Inbox')}</h1>
               <TabsList className="ml-auto">
                 <TabsTrigger
                   value="all"
                   className="text-zinc-600 dark:text-zinc-200"
                 >
-                  All mail
+                  {t('allMail', 'All mail')}
                 </TabsTrigger>
                 <TabsTrigger
                   value="unread"
                   className="text-zinc-600 dark:text-zinc-200"
                 >
-                  Unread
+                  {t('unread', 'Unread')}
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -94,7 +96,7 @@ const MailComponent: FC<MailProps> = ({
               <form onSubmit={(event) => event.preventDefault()}>
                 <div className="relative">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Search" className="pl-8" />
+                  <Input placeholder={t('search', 'Search')} className="pl-8" />
                 </div>
               </form>
             </div>

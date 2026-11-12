@@ -2,6 +2,7 @@
 
 import { useCallback, useState, Fragment, type FC } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Pencil,
   PaintBucket,
@@ -53,6 +54,7 @@ interface ProfileProps {
 }
 
 export const Profile: FC<ProfileProps> = ({ data }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [str, setStr] = useState<string>(generateRandomPassword());
   const [opt, setOpt] = useState<string>('password');
@@ -88,9 +90,9 @@ export const Profile: FC<ProfileProps> = ({ data }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Profile</CardTitle>
+        <CardTitle>{t('profile', 'Profile')}</CardTitle>
         <CardDescription>
-          To Make changes to your account. Click on edit.
+          {t('profileDesc', 'To Make changes to your account. Click on edit.')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -100,16 +102,16 @@ export const Profile: FC<ProfileProps> = ({ data }) => {
           </div>
           <div className="flex flex-row flex-wrap gap-2">
             <Button type="button" onClick={handleDashboard}>
-              <Pencil /> Edit
+              <Pencil /> {t('edit', 'Edit')}
             </Button>
             <Button type="button" onClick={() => navigate('/ai')}>
-              <Sparkles /> AI
+              <Sparkles /> {t('ai', 'AI')}
             </Button>
-            <Button type="button" onClick={() => sendCommand('fill')}>
-              <PaintBucket /> AutoFill
+            <Button type="button" onClick={() => sendCommand('fill')} title={t('fillFromProfile', 'Fill from Profile')}>
+              <PaintBucket /> {t('fillFromProfile', 'Fill from Profile')}
             </Button>
-            <Button type="button" onClick={() => sendCommand('sitefill')}>
-              <PaintBucket /> Site AutoFill
+            <Button type="button" onClick={() => sendCommand('sitefill')} title={t('fillFromSavedSite', 'Fill from Saved Site')}>
+              <PaintBucket /> {t('fillFromSavedSite', 'Fill from Saved Site')}
             </Button>
           </div>
           <div className="w-full max-w-sm pt-2">
@@ -161,7 +163,7 @@ export const Profile: FC<ProfileProps> = ({ data }) => {
                 type="button"
                 onClick={handleGenerate}
               >
-                Generate
+                {t('generate', 'Generate')}
               </Button>
               <div className="relative w-full">
                 <Input

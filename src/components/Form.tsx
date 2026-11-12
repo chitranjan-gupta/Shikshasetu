@@ -7,6 +7,7 @@ import {
   type ChangeEvent,
   type FC,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -32,6 +33,7 @@ import { renderInput } from './render-input';
 
 import { normalizeText, FormValues } from '@/lib';
 import { FormSchema } from '@/constants';
+import { SavedSitesView } from './saved-sites-view';
 
 import type { FormSchemaType } from '@/types';
 
@@ -46,6 +48,7 @@ export const ProfileForm: FC<ProfileFormProps> = ({
   handleSubmit,
   handleClear,
 }) => {
+  const { t } = useTranslation();
   const form = useForm<FormSchemaType>({
     resolver: zodResolver(FormSchema),
   });
@@ -183,6 +186,9 @@ export const ProfileForm: FC<ProfileFormProps> = ({
                 </Fragment>
               ))}
             </div>
+          </div>
+          <div className="mt-8 border-t border-gray-100 pt-6">
+            <SavedSitesView />
           </div>
           <div className="space-y-12">
             <div className="border-b border-gray-900/10 pb-12">
@@ -327,10 +333,10 @@ export const ProfileForm: FC<ProfileFormProps> = ({
 */}{' '}
           </div>
           <div className="flex flex-row gap-x-2 py-1">
-            <Button type="submit">Submit</Button>
+            <Button type="submit">{t('submit', 'Submit')}</Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button type="button">Clear</Button>
+                <Button type="button">{t('clear', 'Clear')}</Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
@@ -341,7 +347,7 @@ export const ProfileForm: FC<ProfileFormProps> = ({
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel>{t('cancel', 'Cancel')}</AlertDialogCancel>
                   <AlertDialogAction onClick={handleClear}>
                     Continue
                   </AlertDialogAction>
@@ -356,10 +362,10 @@ export const ProfileForm: FC<ProfileFormProps> = ({
               onChange={handleUpload}
             />
             <Button type="button" onClick={handleImport}>
-              Import
+              {t('import', 'Import')}
             </Button>
             <Button type="button" onClick={handleExport}>
-              Export
+              {t('export', 'Export')}
             </Button>
           </div>
           <div className="inline-block fixed bottom-20 right-5">

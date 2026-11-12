@@ -2,6 +2,7 @@
 
 import { memo, useCallback, type FC } from 'react';
 import { GalleryVerticalEnd, ChevronsUpDown, Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import {
   DropdownMenu,
@@ -17,6 +18,7 @@ import { saveToLocal } from '@/lib';
 import { useUser, useAccount, useS3 } from '@/hooks';
 
 const ProfileSwitcherComponent: FC = () => {
+  const { t } = useTranslation();
   const { profiles } = useUser();
   const { buckets } = useS3();
   const { account, setAccount } = useAccount();
@@ -37,10 +39,10 @@ const ProfileSwitcherComponent: FC = () => {
           </div>
           <div className="grid flex-1 text-left text-sm leading-tight">
             <span className="truncate font-semibold">
-              {profiles[account]?.email || 'Create Profile'}
+              {profiles[account]?.first_name || 'Default User'}
             </span>
             <span className="truncate text-xs">
-              {profiles[account]?.first_name || ''}
+              {profiles[account]?.email || 'me@example.com'}
             </span>
           </div>
           <ChevronsUpDown className="ml-auto" />
@@ -53,7 +55,7 @@ const ProfileSwitcherComponent: FC = () => {
         sideOffset={4}
       >
         <DropdownMenuLabel className="text-xs text-muted-foreground">
-          Profiles
+          {t('profiles', 'Profiles')}
         </DropdownMenuLabel>
         {profiles.map((profile, index) => (
           <DropdownMenuItem
@@ -76,7 +78,7 @@ const ProfileSwitcherComponent: FC = () => {
           <div className="flex size-6 items-center justify-center rounded-md border bg-background">
             <Plus className="size-4" />
           </div>
-          <div className="font-medium text-muted-foreground">Add Profile</div>
+          <div className="font-medium text-muted-foreground">{t('addProfile', 'Add Profile')}</div>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

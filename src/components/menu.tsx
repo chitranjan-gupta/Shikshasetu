@@ -17,7 +17,7 @@ import {
   generateRandomEmail,
   generateRandomPassword,
   normalizeText,
-} from '@/lib';
+} from '@/lib/text';
 
 interface MenuTitleProps {
   title: () => string;

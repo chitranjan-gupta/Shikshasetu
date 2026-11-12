@@ -12,5 +12,12 @@ export const columns: ColumnDef<Data>[] = [
   {
     header: 'Value',
     accessorKey: '1',
+    cell: ({ row }) => {
+      const val = row.getValue('1');
+      if (typeof val === 'object' && val !== null) {
+        return JSON.stringify(val);
+      }
+      return String(val ?? '');
+    },
   },
 ];

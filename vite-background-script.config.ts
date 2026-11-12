@@ -19,10 +19,9 @@ export default defineConfig({
         background: resolve(root, 'background-script.ts'),
       },
       output: {
-        entryFileNames(chunkInfo) {
-          if (chunkInfo.name === 'background') return 'background-script.js'
-          return '[name].js'
-        },
+        entryFileNames: 'background-script.js',
+        chunkFileNames: '[name].js',
+        format: 'iife',
       },
     },
   },

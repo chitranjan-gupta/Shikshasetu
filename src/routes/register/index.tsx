@@ -6,12 +6,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { ToastAction } from '@/components/ui/toast';
 
-import { RegisterForm } from '@/components';
+import { RegisterForm } from '@/components/register-form';
 
 import { useUser, useAuth, useToast } from '@/hooks';
 
@@ -37,6 +38,7 @@ const formSchema = z.object({
 });
 
 function Register() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { setUser, error, isloading } = useUser();
@@ -84,7 +86,7 @@ function Register() {
         >
           {status === 'signIn' && (
             <Button type="button" variant="outline" onClick={handleDashboard}>
-              <ArrowLeft /> Go to Dashboard
+              <ArrowLeft /> {t('goToDashboard', 'Go to Dashboard')}
             </Button>
           )}
           <RegisterForm
